@@ -4,20 +4,23 @@ import viteLogo from "/vite.svg";
 import "./App.css";
 import EventDemo from "./components/EventDemo/EventDemo";
 import Counter from "./components/Counter/Counter";
-import Todolist from "./components/Todolist/Todolist";
-//auto complete
+import TodoList from "./components/TodoListComponent/Todolist";
+import { TodoProvider } from "./components/TodoListComponent/TodoContext";
+
 function App() {
-    //const [count, setCount] = useState(0);
-    const handleClick = (name) => {
-        console.log("child button is clicked", name);
-    };
-    return (
-        <>
-            {/* <EventDemo onClickButton={handleClick} /> */}
-            {/* <Counter /> */}
-            <Todolist />
-        </>
-    );
+  const handleClick = (name) => {
+    console.log("child button is clicked", name);
+  };
+
+  return (
+    <>
+      {/* <EventDemo onClickButton={handleClick} /> */}
+      {/* <Counter /> */}
+      <TodoProvider>
+      <TodoList />
+      </TodoProvider>
+    </>
+  );
 }
 
 export default App;
