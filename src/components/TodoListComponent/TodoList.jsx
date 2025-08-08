@@ -1,14 +1,38 @@
 import React, { useRef, useEffect } from 'react';
-import { useTodoState, useTodoDispatch, useTodoComputed, TODO_ACTIONS } from './TodoContext';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  setInputValue,
+  addTodo,
+  deleteTodo,
+  toggleComplete,
+  startEdit,
+  setEditValue,
+  saveEdit,
+  cancelEdit,
+  clearCompleted,
+  markAllComplete,
+  setFilter
+} from './actions';
+import {
+  getFilteredTodos,
+  getTodoStats,
+  getInputValue,
+  getEditingId,
+  getEditValue,
+  getFilter,
+  getTodoList
+} from './selectors';
 
 function TodoList() {
-  // Get state and dispatch from context
-  const state = useTodoState();
-  const dispatch = useTodoDispatch();
-  const { filteredTodos, todoStats } = useTodoComputed();
-
-  // Destructure state for easier access
-  const { inputValue, editingId, editValue, filter } = state;
+  // Redux hooks
+  const dispatch = useDispatch();
+  const inputValue = useSelector(getInputValue);
+  const editingId = useSelector(getEditingId);
+  const editValue = useSelector(getEditValue);
+  const filter = useSelector(getFilter);
+  const todolist = useSelector(getTodoList);
+  const filteredTodos = useSelector(getFilteredTodos);
+  const todoStats = useSelector(getTodoStats);
 
   // Create refs
   const inputRef = useRef(null);
@@ -28,60 +52,52 @@ function TodoList() {
     }
   }, [editingId]);
 
+  // Update document title when todolist changes
+  useEffect(() => {
+    const pendingCount = todolist.filter(todo => !todo.completed).length;
+    document.title = pendingCount > 0 
+      ? `Todo App (${pendingCount} pending)` 
+      : 'Todo App';
+
+    // Cleanup function
+    return () => {
+      document.title = 'Todo App';
+    };
+  }, [todolist]);
+
   // Event handlers
   const handleChange = (event) => {
-    dispatch({
-      type: TODO_ACTIONS.SET_INPUT_VALUE,
-      payload: event.target.value
-    });
+    dispatch(setInputValue(event.target.value));
   };
 
   const handleSubmit = () => {
-    dispatch({
-      type: TODO_ACTIONS.ADD_TODO,
-      payload: inputValue
-    });
+    if (inputValue.trim() === '') return;
+    dispatch(addTodo(inputValue));
   };
 
   const handleDelete = (id) => {
-    dispatch({
-      type: TODO_ACTIONS.DELETE_TODO,
-      payload: id
-    });
+    dispatch(deleteTodo(id));
   };
 
   const handleToggleComplete = (id) => {
-    dispatch({
-      type: TODO_ACTIONS.TOGGLE_COMPLETE,
-      payload: id
-    });
+    dispatch(toggleComplete(id));
   };
 
   const handleEdit = (id, currentTitle) => {
-    dispatch({
-      type: TODO_ACTIONS.START_EDIT,
-      payload: { id, currentTitle }
-    });
+    dispatch(startEdit(id, currentTitle));
   };
 
   const handleSave = (id) => {
-    dispatch({
-      type: TODO_ACTIONS.SAVE_EDIT,
-      payload: id
-    });
+    if (editValue.trim() === '') return;
+    dispatch(saveEdit(id));
   };
 
   const handleCancel = () => {
-    dispatch({
-      type: TODO_ACTIONS.CANCEL_EDIT
-    });
+    dispatch(cancelEdit());
   };
 
   const handleEditChange = (event) => {
-    dispatch({
-      type: TODO_ACTIONS.SET_EDIT_VALUE,
-      payload: event.target.value
-    });
+    dispatch(setEditValue(event.target.value));
   };
 
   const handleKeyPress = (event, id) => {
@@ -92,28 +108,21 @@ function TodoList() {
     }
   };
 
-  const clearCompleted = () => {
-    dispatch({
-      type: TODO_ACTIONS.CLEAR_COMPLETED
-    });
+  const handleClearCompleted = () => {
+    dispatch(clearCompleted());
   };
 
-  const markAllComplete = () => {
-    dispatch({
-      type: TODO_ACTIONS.MARK_ALL_COMPLETE
-    });
+  const handleMarkAllComplete = () => {
+    dispatch(markAllComplete());
   };
 
-  const setFilter = (filterType) => {
-    dispatch({
-      type: TODO_ACTIONS.SET_FILTER,
-      payload: filterType
-    });
+  const handleSetFilter = (filterType) => {
+    dispatch(setFilter(filterType));
   };
 
   return (
     <div>
-      <h2>Todo List (Functional Component with Context)</h2>
+      <h2>Todo List (Redux Version)</h2>
 
       {/* Stats */}
       <div>
@@ -138,7 +147,7 @@ function TodoList() {
       {/* Filter Buttons */}
       <div style={{ margin: '10px 0' }}>
         <button
-          onClick={() => setFilter('all')}
+          onClick={() => handleSetFilter('all')}
           style={{
             marginRight: '5px',
             fontWeight: filter === 'all' ? 'bold' : 'normal'
@@ -147,7 +156,7 @@ function TodoList() {
           All ({todoStats.total})
         </button>
         <button
-          onClick={() => setFilter('pending')}
+          onClick={() => handleSetFilter('pending')}
           style={{
             marginRight: '5px',
             fontWeight: filter === 'pending' ? 'bold' : 'normal'
@@ -156,7 +165,7 @@ function TodoList() {
           Pending ({todoStats.pending})
         </button>
         <button
-          onClick={() => setFilter('completed')}
+          onClick={() => handleSetFilter('completed')}
           style={{
             marginRight: '5px',
             fontWeight: filter === 'completed' ? 'bold' : 'normal'
@@ -167,18 +176,18 @@ function TodoList() {
       </div>
 
       {/* Bulk Actions */}
-      {state.todolist.length > 0 && (
+      {todolist.length > 0 && (
         <div style={{ margin: '10px 0' }}>
           {todoStats.pending > 0 && (
             <button 
-              onClick={markAllComplete} 
+              onClick={handleMarkAllComplete} 
               style={{ marginRight: '5px' }}
             >
               Mark All Complete
             </button>
           )}
           {todoStats.completed > 0 && (
-            <button onClick={clearCompleted}>
+            <button onClick={handleClearCompleted}>
               Clear Completed
             </button>
           )}
@@ -245,11 +254,11 @@ function TodoList() {
           ))}
         </ul>
 
-        {filteredTodos.length === 0 && state.todolist.length > 0 && (
+        {filteredTodos.length === 0 && todolist.length > 0 && (
           <p>No {filter} todos</p>
         )}
 
-        {state.todolist.length === 0 && (
+        {todolist.length === 0 && (
           <p>No todos yet. Add one above!</p>
         )}
       </div>

@@ -1,11 +1,12 @@
 import { useState } from "react";
+import { Provider } from 'react-redux';
+import store from './components/TodoListComponent/store';
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
 import EventDemo from "./components/EventDemo/EventDemo";
 import Counter from "./components/Counter/Counter";
 import TodoList from "./components/TodoListComponent/Todolist";
-import { TodoProvider } from "./components/TodoListComponent/TodoContext";
 
 function App() {
   const handleClick = (name) => {
@@ -16,9 +17,9 @@ function App() {
     <>
       {/* <EventDemo onClickButton={handleClick} /> */}
       {/* <Counter /> */}
-      <TodoProvider>
-      <TodoList />
-      </TodoProvider>
+      <Provider store={store}>
+        <TodoList />
+      </Provider>
     </>
   );
 }
